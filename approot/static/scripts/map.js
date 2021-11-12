@@ -2,28 +2,32 @@
 
 require([
 	"esri/config",
-	"esri/Map",
+	"esri/WebMap",
 	"esri/views/MapView",
 	"esri/layers/FeatureLayer",
+	"esri/widgets/Editor",
 	"esri/widgets/Expand",
 	"esri/widgets/LayerList",
-	"esri/widgets/Legend",
 	"esri/widgets/Locate"
 	], function(
 		esriConfig,
-		Map,
+		WebMap,
 		MapView,
 		FeatureLayer,
+		Editor,
 		Expand,
 		LayerList,
-		Legend,
 		Locate
 	) {
 
 	esriConfig.apiKey = "AAPK3283bf26b755450ca3515b519c331123PasmpRKadVRG74CtjghVWetfSZNRP0GE8KPdHR_1bAJaTwaLZ6ti75TfwFUBJJPO";
 
-	const map = new Map({
-		basemap: "arcgis-navigation"
+	let editConfigCitizenCrimeLayer;
+
+	const map = new WebMap({
+		portalItem: {
+			id: "875628c8c9db49df93463e8ec6b94961"
+		}
 	});
 
 	const view = new MapView({
@@ -38,29 +42,75 @@ require([
 	});
 	map.add(neighborhoods);
 
+	// var bikeRoutes = new MapImageLayer({
+	// 	url: "https://www.portlandmaps.com/arcgis/rest/services/Public/PBOT_RecommendedBicycleRoutes/MapServer"
+	// });
+	// map.add(bikeRoutes);
+
+	// var crimes2018 = new FeatureLayer({
+	// 	url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/ArcGIS/rest/services/PPB_Crimes/FeatureServer/2"
+	// });
+	// map.add(crimes2018);
+
+	// var crimes2019 = new FeatureLayer({
+	// 	url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/ArcGIS/rest/services/PPB_Crimes/FeatureServer/1"
+	// });
+	// map.add(crimes2019);
+
+	// var crimes2020 = new FeatureLayer({
+	// 	url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/ArcGIS/rest/services/PPB_Crimes/FeatureServer/0"
+	// });
+	// map.add(crimes2020);
+
 	view.when(function(){
 		let locate = new Locate({
 			view: view,
 			useHeadingEnabled: true,
 			goToLocationEnabled: true
 		});
-		//view.ui.add(locate, "top-left");
 		locate.locate();
 
-		let legend = new Legend({
+		const layerList = new LayerList({
 			view: view,
-			layerInfos: [{
-				layer: neighborhoods,
-				title: "Neighborhoods"
-			}]
+			listItemCreatedFunction: function(event) {
+				const item = event.item;
+				if (item.layer.type != "group") {
+					item.panel = {
+						content: "legend",
+						open: true
+					};
+				}
+			}
 		});
 
-		let legendExpand = new Expand({
+		let layerListExpand = new Expand({
 			view: view,
-			expandIconClass: "esri-icon-legend",
-			content: legend
+			expandIconClass: "esri-icon-layers",
+			content: layerList
 		});
-		view.ui.add(legendExpand, "top-right");
+		view.ui.add(layerListExpand, "top-right");
+
+		view.map.layers.forEach(function(layer) {
+			if (layer.title == "Citizen Reported Crimes") {
+				editConfigCitizenCrimeLayer = {
+					layer: layer
+				};
+			}
+		});
+
+		const editor = new Editor({
+			//label: "Citizen Crime Reporter",  //DOESNT WORK
+			view: view,
+			layerInfos: [editConfigCitizenCrimeLayer],
+			snappingOptions: { enabled: false }
+		});
+
+		let editorExpand = new Expand({
+			view: view,
+			expandIconClass: "esri-icon-edit",
+			content: editor
+		});
+		view.ui.add(editorExpand, "top-right");
 	});
 
 });
