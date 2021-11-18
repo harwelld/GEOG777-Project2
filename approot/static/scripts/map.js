@@ -3,6 +3,7 @@
 require([
 	"esri/config",
 	"esri/WebMap",
+	"esri/geometry/Point",
 	"esri/views/MapView",
 	"esri/layers/FeatureLayer",
 	"esri/widgets/Editor",
@@ -12,6 +13,7 @@ require([
 	], function(
 		esriConfig,
 		WebMap,
+		Point,
 		MapView,
 		FeatureLayer,
 		Editor,
@@ -70,6 +72,13 @@ require([
 		});
 		locate.locate();
 
+		locate.on("locate", function(event) {
+			const { latitude, longitude } = event.position.coords;
+			const screenPoint = view.toScreen(new Point({ latitude, longitude }));
+			let currentNeighborhood = queryNeighborhoods(screenPoint);
+
+		});
+
 		const layerList = new LayerList({
 			view: view,
 			listItemCreatedFunction: function(event) {
@@ -91,9 +100,17 @@ require([
 		view.ui.add(layerListExpand, "top-right");
 
 		view.map.layers.forEach(function(layer) {
-			if (layer.title == "Citizen Reported Crimes") {
+			if (layer.title == "Citizen-Reported Crimes") {
 				editConfigCitizenCrimeLayer = {
-					layer: layer
+					layer: layer, 
+					fieldConfig: [
+						{ name: "Address" },
+						{ name: "Date" },
+						{ name: "CrimeAgainst" },
+						{ name: "OffenseCategory" },
+						{ name: "ReportedBy" },
+						{ name: "ReportedTo" }
+					]
 				};
 			}
 		});
@@ -113,4 +130,23 @@ require([
 		view.ui.add(editorExpand, "top-right");
 	});
 
+	function queryNeighborhoods(screenPoint) {
+		const point = view.toMap(screenPoint);
+		neighborhoods.queryFeatures({
+			geometry: point,
+			spatialRelationship: "intersects",
+			returnGeometry: true,
+			outFields: ["*"]
+		}).then(function(results) {
+			console.log(results.features[0].geometry);
+			return results.features[0].geometry;
+		}).catch(function(error) {
+			console.log(error);
+		});
+	}
+
+	function queryCrimes(currentNeighborhood) {
+		
+	}
 });
+
