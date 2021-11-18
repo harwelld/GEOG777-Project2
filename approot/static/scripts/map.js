@@ -1,4 +1,5 @@
 // Dylan Harwell - GEOG 777 - Fall 2021 - Project 2
+// ESRI JS API v4.21
 
 require([
 	"esri/config",
@@ -10,28 +11,32 @@ require([
 	"esri/widgets/Expand",
 	"esri/widgets/LayerList",
 	"esri/widgets/Locate"
-	], function(
-		esriConfig,
-		WebMap,
-		Point,
-		MapView,
-		FeatureLayer,
-		Editor,
-		Expand,
-		LayerList,
-		Locate
-	) {
+	], (
+	esriConfig,
+	WebMap,
+	Point,
+	MapView,
+	FeatureLayer,
+	Editor,
+	Expand,
+	LayerList,
+	Locate
+	) => {
 
 	esriConfig.apiKey = "AAPK3283bf26b755450ca3515b519c331123PasmpRKadVRG74CtjghVWetfSZNRP0GE8KPdHR_1bAJaTwaLZ6ti75TfwFUBJJPO";
 
+	// Define global variables
 	let editConfigCitizenCrimeLayer;
+	let currentNeighborhood;
+	let neighborhoods;
+	let ppbCrimes2018;
+	let ppbCrimes2019;
+	let ppbCrimes2020;
 
+	// Create Map and View Objects
 	const map = new WebMap({
-		portalItem: {
-			id: "875628c8c9db49df93463e8ec6b94961"
-		}
+		portalItem: { id: "875628c8c9db49df93463e8ec6b94961" }
 	});
-
 	const view = new MapView({
 		map: map,
 		center: [-122.679, 45.518],
@@ -39,67 +44,11 @@ require([
 		container: "map"
 	});
 
-	var neighborhoods = new FeatureLayer({
-		url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/ArcGIS/rest/services/Neighborhoods/FeatureServer/0"
-	});
-	map.add(neighborhoods);
+	// Do Stuff When View is Ready
+	view.when(() => {
 
-	// var bikeRoutes = new MapImageLayer({
-	// 	url: "https://www.portlandmaps.com/arcgis/rest/services/Public/PBOT_RecommendedBicycleRoutes/MapServer"
-	// });
-	// map.add(bikeRoutes);
-
-	// var crimes2018 = new FeatureLayer({
-	// 	url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/ArcGIS/rest/services/PPB_Crimes/FeatureServer/2"
-	// });
-	// map.add(crimes2018);
-
-	// var crimes2019 = new FeatureLayer({
-	// 	url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/ArcGIS/rest/services/PPB_Crimes/FeatureServer/1"
-	// });
-	// map.add(crimes2019);
-
-	// var crimes2020 = new FeatureLayer({
-	// 	url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/ArcGIS/rest/services/PPB_Crimes/FeatureServer/0"
-	// });
-	// map.add(crimes2020);
-
-	view.when(function(){
-		let locate = new Locate({
-			view: view,
-			useHeadingEnabled: true,
-			goToLocationEnabled: true
-		});
-		locate.locate();
-
-		locate.on("locate", function(event) {
-			const { latitude, longitude } = event.position.coords;
-			const screenPoint = view.toScreen(new Point({ latitude, longitude }));
-			let currentNeighborhood = queryNeighborhoods(screenPoint);
-
-		});
-
-		const layerList = new LayerList({
-			view: view,
-			listItemCreatedFunction: function(event) {
-				const item = event.item;
-				if (item.layer.type != "group") {
-					item.panel = {
-						content: "legend",
-						open: true
-					};
-				}
-			}
-		});
-
-		let layerListExpand = new Expand({
-			view: view,
-			expandIconClass: "esri-icon-layers",
-			content: layerList
-		});
-		view.ui.add(layerListExpand, "top-right");
-
-		view.map.layers.forEach(function(layer) {
+		// Loop Through Map and Define Layers
+		view.map.layers.forEach((layer) => {
 			if (layer.title == "Citizen-Reported Crimes") {
 				editConfigCitizenCrimeLayer = {
 					layer: layer, 
@@ -112,41 +61,102 @@ require([
 						{ name: "ReportedTo" }
 					]
 				};
+			} else if (layer.title == "PPB Yearly Crimes") {
+				layer.layers.forEach((subLayer) => {
+					if (subLayer.title == "2020") {
+						ppbCrimes2020 = subLayer
+					} else if (subLayer.title == "2019") {
+						ppbCrimes2019 = subLayer
+					} else if (subLayer.title == "2018") {
+						ppbCrimes2018 = subLayer
+					}
+				});
+			} else if (layer.title == "Neighborhoods") {
+				neighborhoods = layer;
 			}
 		});
 
+		// Use Locate Widget to show user location on map load
+		let locate = new Locate({
+			view: view,
+			useHeadingEnabled: true,
+			goToLocationEnabled: true
+		});
+
+		// Subscribe to Crimes 2020 LayerView for Client-Side Querying
+		view.whenLayerView(ppbCrimes2020).then((layerView) => {
+
+			// Get User Location and Neighborhood 
+			locate.locate().then((event) => {
+				const { latitude, longitude } = event.coords;
+				const userLocation = view.toScreen(new Point({ latitude, longitude }));
+				const point = view.toMap(userLocation);
+				neighborhoods.queryFeatures({
+					geometry: point,
+					spatialRelationship: "intersects",
+					returnGeometry: true,
+					outFields: ["*"]
+				}).then((results) => {
+					currentNeighborhood = results.features[0];
+					console.log(`User is in neighborhood: ${currentNeighborhood.attributes.Name}`);
+				}).catch((error) => {
+					console.log(error);
+				});
+			});
+
+			// Query Crimes Layer in Neighborhood
+			layerView.watch("updating", (value) => {
+				if (!value) {
+					layerView.queryFeatures({
+						geometry: currentNeighborhood.geometry,
+						spatialRelationship: "intersects",
+						returnGeometry: false,
+						outFields: ["*"]
+					}).then((results) => {
+						// Compile Crime Stats Here
+						console.log(`Number of crimes in 2020 in neighborhood: ${results.features.length}`)
+						console.log(results);
+					}).catch((error) => {
+						console.log(error);
+					});
+				}
+			});
+		});
+
+		// Build Expandable Layer List Widget
+		const layerList = new LayerList({
+			view: view,
+			listItemCreatedFunction: (event) => {
+				const item = event.item;
+				if (item.layer.type != "group") {
+					item.panel = {
+						content: "legend",
+						open: true
+					};
+				}
+			}
+		});
+		let layerListExpand = new Expand({
+			view: view,
+			expandIconClass: "esri-icon-layers",
+			content: layerList
+		});
+		view.ui.add(layerListExpand, "top-left");
+
+		// Build Expandable Editor Widget
 		const editor = new Editor({
-			//label: "Citizen Crime Reporter",  //DOESNT WORK
+			label: "Citizen Crime Reporter", //DOESNT WORK
 			view: view,
 			layerInfos: [editConfigCitizenCrimeLayer],
 			snappingOptions: { enabled: false }
 		});
-
 		let editorExpand = new Expand({
+			title: "Citizen Crime Reporter", //DOESNT WORK
 			view: view,
 			expandIconClass: "esri-icon-edit",
 			content: editor
 		});
 		view.ui.add(editorExpand, "top-right");
+
 	});
-
-	function queryNeighborhoods(screenPoint) {
-		const point = view.toMap(screenPoint);
-		neighborhoods.queryFeatures({
-			geometry: point,
-			spatialRelationship: "intersects",
-			returnGeometry: true,
-			outFields: ["*"]
-		}).then(function(results) {
-			console.log(results.features[0].geometry);
-			return results.features[0].geometry;
-		}).catch(function(error) {
-			console.log(error);
-		});
-	}
-
-	function queryCrimes(currentNeighborhood) {
-		
-	}
 });
-
