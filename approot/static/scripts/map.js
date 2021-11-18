@@ -41,7 +41,14 @@ require([
 		map: map,
 		center: [-122.679, 45.518],
 		zoom: 14,
-		container: "map"
+		container: "map",
+		popup: {
+			dockEnabled: true,
+			dockOptions: {
+				buttonEnabled: true,
+				position: "bottom-left"
+			}
+		}
 	});
 
 	// Do Stuff When View is Ready
@@ -137,6 +144,7 @@ require([
 			}
 		});
 		let layerListExpand = new Expand({
+			label: "Layer List",
 			view: view,
 			expandIconClass: "esri-icon-layers",
 			content: layerList
@@ -151,7 +159,6 @@ require([
 			snappingOptions: { enabled: false }
 		});
 		let editorExpand = new Expand({
-			title: "Citizen Crime Reporter", //DOESNT WORK
 			view: view,
 			expandIconClass: "esri-icon-edit",
 			content: editor
