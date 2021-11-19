@@ -114,18 +114,7 @@ require([
 			// Query Crimes Layer in Neighborhood
 			layerView.watch("updating", (value) => {
 				if (!value) {
-					layerView.queryFeatures({
-						geometry: currentNeighborhood.geometry,
-						spatialRelationship: "intersects",
-						returnGeometry: false,
-						outFields: ["*"]
-					}).then((results) => {
-						// Compile Crime Stats Here
-						console.log(`Number of crimes in 2020 in neighborhood: ${results.features.length}`)
-						console.log(results);
-					}).catch((error) => {
-						console.log(error);
-					});
+					queryCrimes(layerView, currentNeighborhood.geometry);
 				}
 			});
 		});
@@ -167,3 +156,18 @@ require([
 
 	});
 });
+
+function queryCrimes(layerView, neighborhoodGeom) {
+	layerView.queryFeatures({
+		geometry: neighborhoodGeom,
+		spatialRelationship: "intersects",
+		returnGeometry: false,
+		outFields: ["*"]
+	}).then((results) => {
+		// Compile Crime Stats Here
+		console.log(`Number of crimes in 2020 in neighborhood: ${results.features.length}`)
+		console.log(results);
+	}).catch((error) => {
+		console.log(error);
+	});
+}
