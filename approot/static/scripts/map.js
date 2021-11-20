@@ -30,6 +30,7 @@ require([
 	let ppbCrimes2018;
 	let ppbCrimes2019;
 	let ppbCrimes2020;
+	let chart;
 	let chartData = {
 		Person: 0,
 		Property: 0,
@@ -92,36 +93,31 @@ require([
 			view: view,
 			goToLocationEnabled: true
 		});
-		view.ui.add(track, "top-left");
 
-		// Subscribe to Crimes 2020 LayerView for Client-Side Querying
-		view.whenLayerView(ppbCrimes2020).then((layerView) => {
-			//console.log(ppbCrimes2020);
-
-			// Start Tracking and Get User Location and Neighborhood
-			track.start();
-			track.on("track", (event) => {
-				const { latitude, longitude } = event.position.coords;
-				const userLocation = view.toScreen(new Point({ latitude, longitude }));
-				const point = view.toMap(userLocation);
-				neighborhoods.queryFeatures({
-					geometry: point,
-					spatialRelationship: "intersects",
-					returnGeometry: true,
-					outFields: ["*"]
-				}).then((results) => {
-					currentNeighborhood = results.features[0];
-					console.log(`User is in neighborhood: ${currentNeighborhood.attributes.Name}`);
-				}).catch((error) => {
-					console.log(error);
+		// Start Tracking and Get User Location and Neighborhood
+		track.start();
+		track.on("track", (event) => {
+			const { latitude, longitude } = event.position.coords;
+			const userLocation = view.toScreen(new Point({ latitude, longitude }));
+			const point = view.toMap(userLocation);
+			neighborhoods.queryFeatures({
+				geometry: point,
+				spatialRelationship: "intersects",
+				returnGeometry: true,
+				outFields: ["*"]
+			}).then((results) => {
+				currentNeighborhood = results.features[0];
+				console.log(`User is in neighborhood: ${currentNeighborhood.attributes.Name}`);
+				// Subscribe to Crimes 2020 LayerView for Client-Side Querying
+				view.whenLayerView(ppbCrimes2020).then((layerView) => {
+					layerView.watch("updating", (value) => {
+						if (!value) {
+							queryCrimes(layerView, currentNeighborhood);
+						}
+					});
 				});
-			});
-
-			// Query Crimes Layer in Neighborhood
-			layerView.watch("updating", (value) => {
-				if (!value) {
-					queryCrimes(layerView, currentNeighborhood.geometry);
-				}
+			}).catch((error) => {
+				console.log(error);
 			});
 		});
 
@@ -145,7 +141,6 @@ require([
 			expandTooltip: "View map layers",
 			content: layerList
 		});
-		view.ui.add(layerListExpand, "top-left");
 
 		// Build Expandable Editor Widget
 		const editor = new Editor({
@@ -155,6 +150,7 @@ require([
 			snappingOptions: { enabled: false }
 		});
 		
+		// Build Expandable Crime Starts Chart
 		let editorExpand = new Expand({
 			view: view,
 			label: "Report a Crime", //DOESNT WORK
@@ -162,43 +158,93 @@ require([
 			expandTooltip: "Report a crime",
 			content: editor
 		});
-		view.ui.add(editorExpand, "top-right");
+		
 		// Attempt to change Editor widget label: FAIL
 		// editor.when(() => {
 		// 	console.log('Initialized');
 		// 	document.getElementsByClassName('esri-editor__title')[0].innerText = "Report a Crime";
 		// });
+
+		// Build Expandable Chart Widget
+		let chartExpand = new Expand({
+			view: view,
+			expanded: true,
+			expandIconClass: "esri-icon-chart",
+			expandTooltip: "Show 2020 neighborhood crime stats",
+			content: document.getElementById("chartPanel")
+		});
+
+		// Add widgets to UI
+		view.ui.add(track, "top-left");
+		view.ui.add(layerListExpand, "top-left");
+		view.ui.add(editorExpand, "top-right");
+		view.ui.add(chartExpand, "bottom-left");
 	});
 
-	function queryCrimes(layerView, neighborhoodGeom) {
+	function queryCrimes(layerView, neighborhood) {
 		layerView.queryFeatures({
-			geometry: neighborhoodGeom,
+			geometry: neighborhood.geometry,
+			//geometry: view.extent,   // Uncomment for testing - pan screen to update data
 			spatialRelationship: "intersects",
 			returnGeometry: false,
 			outFields: ["*"]
 		}).then((results) => {
-			// Compile Crime Stats Here
-			console.log(`Number of crimes in 2020 in neighborhood: ${results.features.length}`)
-			console.log(results);
-			let person = 0;
-			let property = 0;
-			let society = 0;
-			results.features.forEach((feature) => {
-				if (feature.attributes.CrimeAgainst == "Person") {
-					person++;
-				} else if (feature.attributes.CrimeAgainst == "Property") {
-					property++;
-				} else if (feature.attributes.CrimeAgainst == "Society") {
-					society++;
-				}
-			});
-			chartData.Person = person;
-			chartData.Property = property;
-			chartData.Society = society;
-			console.log(chartData);
+			console.log(`Total 2020 Neighborhood Crimes: ${results.features.length}`);
+			updateChartData(results.features);
+			updateChart();
 		}).catch((error) => {
 			console.log(error);
 		});
+	}
+
+	function updateChartData(features) {
+		let person = 0;
+		let property = 0;
+		let society = 0;
+		features.forEach((feature) => {
+			if (feature.attributes.CrimeAgainst == "Person") {
+				person++;
+			} else if (feature.attributes.CrimeAgainst == "Property") {
+				property++;
+			} else if (feature.attributes.CrimeAgainst == "Society") {
+				society++;
+			}
+		});
+		chartData.Person = person;
+		chartData.Property = property;
+		chartData.Society = society;
+		console.log(chartData);
+	}
+
+	function updateChart() {
+		if (!chart) {
+			chart = new Chart(document.getElementById("chart"), {
+				type: "bar",
+				data: {
+					labels: ["Person", "Property", "Society"],
+					datasets: [
+						{
+							label: "Number of Crimes",
+							backgroundColor: ["#FF6600", "#FFFF00", "#FFCC00"],
+							data: [chartData.Person, chartData.Property, chartData.Society]
+						}
+					]
+				},
+				options: {
+					responsive: false,
+					legend: { display: false },
+					title: {
+						display: true,
+						text: `2020 Neighborhood Crime Statisics: ${currentNeighborhood.attributes.Name}`
+					}
+				}
+			});
+		} else {
+			chart.data.datasets[0].data[0] = chartData.Person;
+			chart.data.datasets[0].data[1] = chartData.Property;
+			chart.data.datasets[0].data[2] = chartData.Society;
+			chart.update();
+		}
 	}
 
 });

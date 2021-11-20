@@ -7,15 +7,13 @@
 
 		<link rel="shortcut icon" href="{{ url_for('static', filename='img/favicon.ico') }}">
 
-		<!-- Load jQuery from CDN -->
-		<script src="https://code.jquery.com/jquery-3.6.0.js"
-			integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk="
-			crossorigin="anonymous"></script>
+		<!-- Load the Chart.js library -->
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.5.0/Chart.min.js"></script>
 
 		<!-- Load ESRI JS API -->
 		<link rel="stylesheet" href="https://js.arcgis.com/4.21/esri/themes/light/main.css">
 		<script src="https://js.arcgis.com/4.21/"></script>
-		
+
 		<!-- Load custom CSS -->
 		<link rel="stylesheet" href="{{ url_for('static', filename='styles/app.css') }}">
     </head>
