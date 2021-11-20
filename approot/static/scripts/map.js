@@ -30,6 +30,11 @@ require([
 	let ppbCrimes2018;
 	let ppbCrimes2019;
 	let ppbCrimes2020;
+	let chartData = {
+		Person: 0,
+		Property: 0,
+		Society: 0
+	};
 
 	// Create Map and View Objects
 	const map = new WebMap({
@@ -164,19 +169,36 @@ require([
 		// 	document.getElementsByClassName('esri-editor__title')[0].innerText = "Report a Crime";
 		// });
 	});
-});
 
-function queryCrimes(layerView, neighborhoodGeom) {
-	layerView.queryFeatures({
-		geometry: neighborhoodGeom,
-		spatialRelationship: "intersects",
-		returnGeometry: false,
-		outFields: ["*"]
-	}).then((results) => {
-		// Compile Crime Stats Here
-		console.log(`Number of crimes in 2020 in neighborhood: ${results.features.length}`)
-		console.log(results);
-	}).catch((error) => {
-		console.log(error);
-	});
-}
+	function queryCrimes(layerView, neighborhoodGeom) {
+		layerView.queryFeatures({
+			geometry: neighborhoodGeom,
+			spatialRelationship: "intersects",
+			returnGeometry: false,
+			outFields: ["*"]
+		}).then((results) => {
+			// Compile Crime Stats Here
+			console.log(`Number of crimes in 2020 in neighborhood: ${results.features.length}`)
+			console.log(results);
+			let person = 0;
+			let property = 0;
+			let society = 0;
+			results.features.forEach((feature) => {
+				if (feature.attributes.CrimeAgainst == "Person") {
+					person++;
+				} else if (feature.attributes.CrimeAgainst == "Property") {
+					property++;
+				} else if (feature.attributes.CrimeAgainst == "Society") {
+					society++;
+				}
+			});
+			chartData.Person = person;
+			chartData.Property = property;
+			chartData.Society = society;
+			console.log(chartData);
+		}).catch((error) => {
+			console.log(error);
+		});
+	}
+
+});
