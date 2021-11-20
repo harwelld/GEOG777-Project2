@@ -137,6 +137,7 @@ require([
 			label: "Layer List",
 			view: view,
 			expandIconClass: "esri-icon-layers",
+			expandTooltip: "View map layers",
 			content: layerList
 		});
 		view.ui.add(layerListExpand, "top-left");
@@ -153,6 +154,7 @@ require([
 			view: view,
 			label: "Report a Crime", //DOESNT WORK
 			expandIconClass: "esri-icon-edit",
+			expandTooltip: "Report a crime",
 			content: editor
 		});
 		view.ui.add(editorExpand, "top-right");
