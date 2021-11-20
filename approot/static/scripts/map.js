@@ -61,7 +61,8 @@ require([
 						{ name: "Address" },
 						{ name: "Date" },
 						{ name: "CrimeAgainst" },
-						{ name: "OffenseCategory" },
+						//{ name: "OffenseCategory" }, No support for subtypes or contingent values in hosted feature layers!
+						{ name: "Description" },       // Using Description field instead
 						{ name: "ReportedBy" },
 						{ name: "ReportedTo" }
 					]
@@ -90,6 +91,7 @@ require([
 
 		// Subscribe to Crimes 2020 LayerView for Client-Side Querying
 		view.whenLayerView(ppbCrimes2020).then((layerView) => {
+			//console.log(ppbCrimes2020);
 
 			// Start Tracking and Get User Location and Neighborhood
 			track.start();
@@ -141,18 +143,24 @@ require([
 
 		// Build Expandable Editor Widget
 		const editor = new Editor({
-			label: "Citizen Crime Reporter", //DOESNT WORK
 			view: view,
+			label: "Report a Crime", //DOESNT WORK
 			layerInfos: [editConfigCitizenCrimeLayer],
 			snappingOptions: { enabled: false }
 		});
+		
 		let editorExpand = new Expand({
 			view: view,
+			label: "Report a Crime", //DOESNT WORK
 			expandIconClass: "esri-icon-edit",
 			content: editor
 		});
 		view.ui.add(editorExpand, "top-right");
-
+		// Attempt to change Editor widget label: FAIL
+		// editor.when(() => {
+		// 	console.log('Initialized');
+		// 	document.getElementsByClassName('esri-editor__title')[0].innerText = "Report a Crime";
+		// });
 	});
 });
 
