@@ -6,21 +6,19 @@ require([
 	"esri/WebMap",
 	"esri/geometry/Point",
 	"esri/views/MapView",
-	"esri/layers/FeatureLayer",
 	"esri/widgets/Editor",
 	"esri/widgets/Expand",
 	"esri/widgets/LayerList",
-	"esri/widgets/Locate"
+	"esri/widgets/Track"
 	], (
 	esriConfig,
 	WebMap,
 	Point,
 	MapView,
-	FeatureLayer,
 	Editor,
 	Expand,
 	LayerList,
-	Locate
+	Track
 	) => {
 
 	esriConfig.apiKey = "AAPK3283bf26b755450ca3515b519c331123PasmpRKadVRG74CtjghVWetfSZNRP0GE8KPdHR_1bAJaTwaLZ6ti75TfwFUBJJPO";
@@ -83,19 +81,20 @@ require([
 			}
 		});
 
-		// Use Locate Widget to show user location on map load
-		let locate = new Locate({
+		// Add Track Widget
+		let track = new Track({
 			view: view,
-			useHeadingEnabled: true,
 			goToLocationEnabled: true
 		});
+		view.ui.add(track, "top-left");
 
 		// Subscribe to Crimes 2020 LayerView for Client-Side Querying
 		view.whenLayerView(ppbCrimes2020).then((layerView) => {
 
-			// Get User Location and Neighborhood 
-			locate.locate().then((event) => {
-				const { latitude, longitude } = event.coords;
+			// Start Tracking and Get User Location and Neighborhood
+			track.start();
+			track.on("track", (event) => {
+				const { latitude, longitude } = event.position.coords;
 				const userLocation = view.toScreen(new Point({ latitude, longitude }));
 				const point = view.toMap(userLocation);
 				neighborhoods.queryFeatures({
