@@ -163,7 +163,7 @@ require([
 		editor.viewModel.watch("state", (state) => {
 			if (state == "ready") {
 				setTimeout(() => {
-					document.getElementsByClassName("esri-editor__title")[0].innerText = "Report a Crime";
+					document.getElementsByClassName("esri-editor__title")[0].innerText = "Citizen Crime Reporter";
 					$(".esri-editor__feature-list-item.esri-editor__feature-list-item--disabled").remove();
 				}, 50);
 			}
@@ -229,7 +229,7 @@ require([
 					datasets: [
 						{
 							label: "Number of Crimes",
-							backgroundColor: ["#FF6600", "#FFFF00", "#FFCC00"],
+							backgroundColor: ["#FF6600", "#FFFF00", "#C500FF"],
 							data: [chartData.Person, chartData.Property, chartData.Society]
 						}
 					]
@@ -239,7 +239,7 @@ require([
 					legend: { display: false },
 					title: {
 						display: true,
-						text: `2020 Neighborhood PPB Crime Statisics: ${currentNeighborhood.attributes.Name}`
+						text: `2020 PPB Crimes: ${currentNeighborhood.attributes.Name} Neighborhood`
 					}
 				}
 			});
