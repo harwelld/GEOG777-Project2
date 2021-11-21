@@ -1,6 +1,3 @@
-from json import load
-from os import path
-
 from flask import current_app as app
 from flask import redirect, render_template, url_for
 
