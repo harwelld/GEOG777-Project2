@@ -217,7 +217,7 @@ require([
 	function queryCrimes(layerView, neighborhood) {
 		layerView.queryFeatures({
 			geometry: neighborhood.geometry,
-			//geometry: view.extent,   // Uncomment for testing - pan screen to update data
+			//geometry: view.extent,   // For testing - pan screen to update data in chart
 			spatialRelationship: "intersects",
 			returnGeometry: false,
 			outFields: ["*"]
