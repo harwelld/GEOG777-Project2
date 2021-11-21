@@ -145,7 +145,7 @@ require([
 		// Build Expandable Editor Widget
 		const editor = new Editor({
 			view: view,
-			label: "Report a Crime", //DOESNT WORK
+			label: "Report a Crime", //DOESNT WORK!
 			layerInfos: [editConfigCitizenCrimeLayer],
 			snappingOptions: { enabled: false }
 		});
@@ -153,24 +153,28 @@ require([
 		// Build Expandable Crime Starts Chart
 		let editorExpand = new Expand({
 			view: view,
-			label: "Report a Crime", //DOESNT WORK
+			label: "Report a Crime", //DOESNT WORK!
 			expandIconClass: "esri-icon-edit",
 			expandTooltip: "Report a crime",
 			content: editor
 		});
-		
-		// Attempt to change Editor widget label: FAIL
-		// editor.when(() => {
-		// 	console.log('Initialized');
-		// 	document.getElementsByClassName('esri-editor__title')[0].innerText = "Report a Crime";
-		// });
+
+		// Haaaack because label property of Editor does not work
+		editor.viewModel.watch("state", (state) => {
+			if (state == "ready") {
+				setTimeout(() => {
+					document.getElementsByClassName("esri-editor__title")[0].innerText = "Report a Crime";
+					$(".esri-editor__feature-list-item.esri-editor__feature-list-item--disabled").remove();
+				}, 50);
+			}
+		});
 
 		// Build Expandable Chart Widget
 		let chartExpand = new Expand({
 			view: view,
 			expanded: true,
 			expandIconClass: "esri-icon-chart",
-			expandTooltip: "Show 2020 neighborhood crime stats",
+			expandTooltip: "Show 2020 PPB neighborhood crime stats",
 			content: document.getElementById("chartPanel")
 		});
 
@@ -189,7 +193,7 @@ require([
 			returnGeometry: false,
 			outFields: ["*"]
 		}).then((results) => {
-			console.log(`Total 2020 Neighborhood Crimes: ${results.features.length}`);
+			console.log(`Total 2020 PPB Neighborhood Crimes: ${results.features.length}`);
 			updateChartData(results.features);
 			updateChart();
 		}).catch((error) => {
@@ -235,7 +239,7 @@ require([
 					legend: { display: false },
 					title: {
 						display: true,
-						text: `2020 Neighborhood Crime Statisics: ${currentNeighborhood.attributes.Name}`
+						text: `2020 Neighborhood PPB Crime Statisics: ${currentNeighborhood.attributes.Name}`
 					}
 				}
 			});
