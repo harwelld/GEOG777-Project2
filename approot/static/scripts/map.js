@@ -6,19 +6,25 @@ require([
 	"esri/WebMap",
 	"esri/geometry/Point",
 	"esri/views/MapView",
+	"esri/widgets/Compass",
+	"esri/widgets/Directions",
 	"esri/widgets/Editor",
 	"esri/widgets/Expand",
 	"esri/widgets/LayerList",
+	"esri/widgets/ScaleBar",
 	"esri/widgets/Track"
 	], (
-	esriConfig,
-	WebMap,
-	Point,
-	MapView,
-	Editor,
-	Expand,
-	LayerList,
-	Track
+		esriConfig,
+		WebMap,
+		Point,
+		MapView,
+		Compass,
+		Directions,
+		Editor,
+		Expand,
+		LayerList,
+		ScaleBar,
+		Track
 	) => {
 
 	esriConfig.apiKey = "AAPK3283bf26b755450ca3515b519c331123PasmpRKadVRG74CtjghVWetfSZNRP0GE8KPdHR_1bAJaTwaLZ6ti75TfwFUBJJPO";
@@ -88,7 +94,29 @@ require([
 			}
 		});
 
-		// Add Track Widget
+		// Create Compass Widget
+		let compass = new Compass({
+			view: view,
+		});
+
+		// Create Expandable Directions Widget
+		let directions = new Directions({
+			view: view,
+			apiKey: "AAPK1204be35b2f441d4b0b78dd506ec8c9alSueoSU2PkeOVymLNz1XJe13F7ZqP0B3fEZ7w4UlxfNwL2uBJikpd0whxksfFQcb"
+		});
+		let directionsExpand = new Expand({
+			view: view,
+			expandIconClass: "esri-icon-directions",
+			expandTooltip: "Get directions",
+			content: directions
+		});
+
+		// Create Scale Bar Widget
+		let scaleBar = new ScaleBar({
+			view: view
+		});
+
+		// Create Track Widget
 		let track = new Track({
 			view: view,
 			goToLocationEnabled: true
@@ -149,12 +177,10 @@ require([
 			layerInfos: [editConfigCitizenCrimeLayer],
 			snappingOptions: { enabled: false }
 		});
-		
-		// Build Expandable Crime Starts Chart
 		let editorExpand = new Expand({
 			view: view,
 			label: "Report a Crime", //DOESNT WORK!
-			expandIconClass: "esri-icon-edit",
+			expandIconClass: "esri-icon-notice-triangle",
 			expandTooltip: "Report a crime",
 			content: editor
 		});
@@ -178,8 +204,11 @@ require([
 			content: document.getElementById("chartPanel")
 		});
 
-		// Add widgets to UI
+		// Add Widgets to UI
+		view.ui.add(scaleBar, "bottom-right");
+		view.ui.add(compass, "top-left");
 		view.ui.add(track, "top-left");
+		view.ui.add(directionsExpand, "top-left");
 		view.ui.add(layerListExpand, "top-left");
 		view.ui.add(editorExpand, "top-right");
 		view.ui.add(chartExpand, "bottom-left");

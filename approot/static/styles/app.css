@@ -11,3 +11,14 @@ body { margin: 0; padding: 0; }
 	height: 280px;
 	width: 400px;
 }
+
+.esri-editor__feature-list-name {
+	visibility: hidden;
+	color: red;
+	content: none;
+}
+
+.esri-editor__feature-list-item:nth-child(1) .esri-editor__feature-list-name:before {
+	visibility: visible;
+	content: "Report a crime";
+}
